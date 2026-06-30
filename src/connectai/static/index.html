@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ConnectAI — telecom support</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #ffffff;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --brand: #2563eb;
+    --brand-ink: #1d4ed8;
+    --user: #2563eb;
+    --bot: #f1f5f9;
+    --amber: #b45309;
+    --amber-bg: #fffbeb;
+    --amber-line: #fcd34d;
+    --teal: #0d9488;
+    --radius: 16px;
+    --shadow: 0 10px 30px rgba(2, 6, 23, .12);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: radial-gradient(1200px 600px at 80% -10%, #1e3a8a 0%, var(--bg) 55%);
+    display: flex;
+    min-height: 100dvh;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .app {
+    width: 100%;
+    max-width: 760px;
+    background: var(--panel);
+    border-radius: 22px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100dvh - 48px);
+  }
+  header {
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo {
+    width: 40px; height: 40px; border-radius: 11px; flex: none;
+    background: linear-gradient(135deg, var(--brand), var(--teal));
+    display: grid; place-items: center; color: #fff; font-weight: 700;
+  }
+  .title { font-weight: 700; font-size: 16px; }
+  .subtitle { color: var(--muted); font-size: 12.5px; }
+  .mode {
+    margin-left: auto; font-size: 11.5px; font-weight: 600;
+    padding: 5px 10px; border-radius: 999px;
+    background: #ecfeff; color: #0e7490; border: 1px solid #a5f3fc;
+    white-space: nowrap;
+  }
+  #log {
+    flex: 1; overflow-y: auto; padding: 22px;
+    display: flex; flex-direction: column; gap: 16px;
+    background:
+      linear-gradient(180deg, #fbfdff, #fff);
+  }
+  .row { display: flex; gap: 10px; max-width: 88%; }
+  .row.user { align-self: flex-end; flex-direction: row-reverse; }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 9px; flex: none; margin-top: 2px;
+    display: grid; place-items: center; font-size: 13px; font-weight: 700; color: #fff;
+  }
+  .row.bot .avatar { background: linear-gradient(135deg, var(--brand), var(--teal)); }
+  .row.user .avatar { background: #334155; }
+  .bubble {
+    padding: 11px 14px; border-radius: 14px;
+    background: var(--bot); border: 1px solid var(--line);
+    white-space: pre-wrap; word-wrap: break-word;
+  }
+  .row.user .bubble { background: var(--user); color: #fff; border-color: transparent; }
+  .bubble.refusal { background: var(--amber-bg); border-color: var(--amber-line); color: var(--amber); }
+  .sources { margin-top: 9px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    font-size: 11.5px; font-weight: 600; color: var(--brand-ink);
+    background: #eff6ff; border: 1px solid #bfdbfe;
+    padding: 3px 9px; border-radius: 999px;
+  }
+  .chip .score { color: var(--muted); font-weight: 500; }
+  .meta { margin-top: 7px; font-size: 11px; color: var(--muted); }
+  .typing { display: inline-flex; gap: 4px; padding: 4px 2px; }
+  .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite; }
+  .typing i:nth-child(2) { animation-delay: .2s; } .typing i:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+  .suggestions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .suggestion {
+    font-size: 13px; color: var(--ink); background: #fff;
+    border: 1px solid var(--line); border-radius: 999px; padding: 8px 13px; cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .suggestion:hover { border-color: var(--brand); background: #f8fbff; }
+  footer { padding: 14px 18px; border-top: 1px solid var(--line); }
+  form { display: flex; gap: 10px; }
+  #q {
+    flex: 1; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px;
+    font: inherit; outline: none;
+  }
+  #q:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(37, 99, 235, .12); }
+  button.send {
+    border: 0; background: var(--brand); color: #fff; font-weight: 600;
+    padding: 0 18px; border-radius: 12px; cursor: pointer;
+  }
+  button.send:disabled { opacity: .55; cursor: not-allowed; }
+  .hint { margin-top: 8px; font-size: 11px; color: var(--muted); text-align: center; }
+  a { color: var(--brand-ink); }
+</style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="logo">C</div>
+      <div>
+        <div class="title">ConnectAI</div>
+        <div class="subtitle">International calling · top-ups · billing support</div>
+      </div>
+      <div class="mode" id="mode">checking…</div>
+    </header>
+
+    <div id="log">
+      <div class="row bot">
+        <div class="avatar">C</div>
+        <div>
+          <div class="bubble">Hi! I'm ConnectAI. Ask me about international calling, mobile top-ups, billing, your account, or the app. I only answer from our help center, and I'll cite my sources.</div>
+          <div class="sources suggestions" id="suggestions"></div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <form id="form">
+        <input id="q" autocomplete="off" placeholder="Type a question…" />
+        <button class="send" id="send" type="submit">Send</button>
+      </form>
+      <div class="hint">Grounded answers with an abstention gate · powered by hybrid RAG + reranking</div>
+    </footer>
+  </main>
+
+<script>
+  const log = document.getElementById('log');
+  const form = document.getElementById('form');
+  const input = document.getElementById('q');
+  const sendBtn = document.getElementById('send');
+  const modeEl = document.getElementById('mode');
+
+  const EXAMPLES = [
+    "How do I make my first international call?",
+    "My top-up was paid but not received",
+    "How do I turn off auto-recharge?",
+    "I'm not getting the SMS login code",
+  ];
+
+  const suggestions = document.getElementById('suggestions');
+  EXAMPLES.forEach(text => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'suggestion';
+    b.textContent = text;
+    b.onclick = () => { input.value = text; submit(); };
+    suggestions.appendChild(b);
+  });
+
+  function esc(s) {
+    return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  }
+
+  function addUser(text) {
+    const row = document.createElement('div');
+    row.className = 'row user';
+    row.innerHTML = `<div class="avatar">You</div><div class="bubble">${esc(text)}</div>`;
+    log.appendChild(row);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function addTyping() {
+    const row = document.createElement('div');
+    row.className = 'row bot';
+    row.innerHTML = `<div class="avatar">C</div><div class="bubble"><span class="typing"><i></i><i></i><i></i></span></div>`;
+    log.appendChild(row);
+    log.scrollTop = log.scrollHeight;
+    return row;
+  }
+
+  function renderAnswer(row, data) {
+    const refusal = data.refused ? ' refusal' : '';
+    let sources = '';
+    if (data.sources && data.sources.length) {
+      sources = '<div class="sources">' + data.sources.map(s =>
+        `<span class="chip">${esc(s.article_id)} <span class="score">${s.score.toFixed(2)}</span></span>`
+      ).join('') + '</div>';
+    }
+    const cost = data.est_cost_usd ? `$${data.est_cost_usd.toFixed(6)}` : 'free';
+    const meta = `<div class="meta">${esc(data.model)} · ${Math.round(data.latency_ms)} ms · ${cost}</div>`;
+    row.innerHTML = `<div class="avatar">C</div><div>`
+      + `<div class="bubble${refusal}">${esc(data.answer)}</div>`
+      + sources + meta + `</div>`;
+    log.scrollTop = log.scrollHeight;
+  }
+
+  async function submit() {
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    sendBtn.disabled = true;
+    addUser(text);
+    const typingRow = addTyping();
+    try {
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ message: text }),
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      renderAnswer(typingRow, data);
+    } catch (err) {
+      typingRow.innerHTML = `<div class="avatar">C</div><div class="bubble refusal">Something went wrong reaching the server. Is the API running?</div>`;
+    } finally {
+      sendBtn.disabled = false;
+      input.focus();
+    }
+  }
+
+  form.addEventListener('submit', e => { e.preventDefault(); submit(); });
+
+  // Health badge: show whether real Claude or the key-free fallback is active.
+  fetch('/health').then(r => r.json()).then(h => {
+    modeEl.textContent = (h.generation === 'claude' ? 'Claude · ' : 'fallback · ') + h.indexed_chunks + ' chunks';
+  }).catch(() => { modeEl.textContent = 'offline'; });
+</script>
+</body>
+</html>
