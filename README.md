@@ -1,5 +1,10 @@
 # ConnectAI
 
+[![CI](https://github.com/Tonyk91/connectai/actions/workflows/ci.yml/badge.svg)](https://github.com/Tonyk91/connectai/actions/workflows/ci.yml)
+[![Live demo on Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%9A%80%20live%20demo-Hugging%20Face%20Spaces-blue)](https://huggingface.co/spaces/tonyk91/connectai)
+
+**🔗 Live demo:** https://tonyk91-connectai.hf.space &nbsp;·&nbsp; **Space:** https://huggingface.co/spaces/tonyk91/connectai
+
 A production-grade, RAG-driven customer-support agent for an international telecom
 service (international calling, mobile top-ups, billing, account & app support).
 It answers customer questions **grounded only in a retrieved knowledge base**, cites
