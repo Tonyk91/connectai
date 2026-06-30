@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality-and-eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Lint (ruff)
+        run: ruff check src tests
+
+      - name: Type-check (mypy)
+        run: mypy
+
+      - name: Unit tests (pytest, Claude mocked)
+        run: pytest
+
+      # Caches the embedding + reranker models between runs to keep eval fast.
+      - name: Cache HuggingFace models
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-${{ runner.os }}-bge-small-reranker-base
+
+      - name: Eval harness with regression gate
+        run: python -m connectai.eval
+
+      - name: Upload eval artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: |
+            eval_results.json
+            eval_report.md
+          if-no-files-found: ignore

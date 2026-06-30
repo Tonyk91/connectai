@@ -1,0 +1,21 @@
+services:
+  app:
+    build: .
+    image: connectai:latest
+    ports:
+      - "8000:8000"
+    environment:
+      # Optional: set ANTHROPIC_API_KEY in a .env file to enable real Claude generation.
+      # Without it, ConnectAI uses the deterministic extractive fallback (free).
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - CHROMA_DIR=/app/data/chroma
+      - LOG_FILE=/app/logs/requests.jsonl
+    volumes:
+      - chroma-data:/app/data/chroma
+      - model-cache:/models
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+volumes:
+  chroma-data:
+  model-cache:
