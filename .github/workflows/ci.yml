@@ -51,3 +51,35 @@ jobs:
             eval_results.json
             eval_report.md
           if-no-files-found: ignore
+
+  # DevSecOps gate: fail the pipeline on high-signal SAST / SCA / secret findings.
+  security-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install project + security tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          pip install bandit pip-audit
+
+      - name: SAST — bandit (fail on medium+ severity)
+        run: bandit -r src --severity-level medium --confidence-level medium
+
+      - name: SCA — pip-audit (fail on any known dependency CVE)
+        run: pip-audit --skip-editable
+
+      - name: SCA + secret + IaC scan — Trivy (fail on HIGH/CRITICAL)
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sh -s -- -b /usr/local/bin
+          trivy fs --scanners vuln,secret,misconfig \
+            --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 .
