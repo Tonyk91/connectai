@@ -128,7 +128,7 @@ def evaluate(config: Config | None = None, testset_path: Path = DEFAULT_TESTSET)
         )
 
     n = len(hits)
-    summary = {
+    summary: dict[str, object] = {
         "k": k,
         "in_corpus_queries": n,
         "out_of_corpus_queries": refusal_total,
@@ -137,10 +137,31 @@ def evaluate(config: Config | None = None, testset_path: Path = DEFAULT_TESTSET)
         "recall_at_k": round(sum(recalls) / n, 4) if n else 0.0,
         "refusal_accuracy": round(refusal_correct / refusal_total, 4) if refusal_total else 0.0,
         "hit_rate_threshold": config.eval_hit_rate_threshold,
+        "refusal_threshold": config.eval_refusal_threshold,
     }
-    summary["passed"] = bool(summary["hit_rate"] >= config.eval_hit_rate_threshold)
+    failures = gate_failures(summary)
+    summary["passed"] = not failures
+    summary["gate_failures"] = failures
 
     return {"summary": summary, "per_query": per_query}
+
+
+def gate_failures(summary: dict[str, object]) -> list[str]:
+    """Return one reason per failed gate condition; an empty list means the gate passed.
+
+    Both retrieval quality and refusal are release criteria: a system that finds the
+    right article but answers out-of-corpus questions anyway must not ship.
+    """
+    failures: list[str] = []
+    hit_rate = float(summary["hit_rate"])  # type: ignore[arg-type]
+    hit_threshold = float(summary["hit_rate_threshold"])  # type: ignore[arg-type]
+    if hit_rate < hit_threshold:
+        failures.append(f"Hit Rate {hit_rate} < threshold {hit_threshold}")
+    refusal = float(summary["refusal_accuracy"])  # type: ignore[arg-type]
+    refusal_threshold = float(summary["refusal_threshold"])  # type: ignore[arg-type]
+    if refusal < refusal_threshold:
+        failures.append(f"Refusal accuracy {refusal} < threshold {refusal_threshold}")
+    return failures
 
 
 def write_report(results: dict[str, object], json_path: Path, md_path: Path) -> None:
@@ -150,7 +171,7 @@ def write_report(results: dict[str, object], json_path: Path, md_path: Path) -> 
     status = "✅ PASS" if s["passed"] else "❌ FAIL"
     md = f"""# ConnectAI — Evaluation Report
 
-**Status:** {status} (gate: Hit Rate ≥ {s['hit_rate_threshold']})
+**Status:** {status} (gate: Hit Rate ≥ {s['hit_rate_threshold']} AND refusal accuracy ≥ {s['refusal_threshold']})
 
 | Metric | Value |
 |---|---|
@@ -175,11 +196,9 @@ def main() -> None:
     assert isinstance(summary, dict)
     print(json.dumps(summary, indent=2))
     if not summary["passed"]:
-        print(
-            f"\nEval gate FAILED: Hit Rate {summary['hit_rate']} "
-            f"< threshold {summary['hit_rate_threshold']}",
-            file=sys.stderr,
-        )
+        failures = summary["gate_failures"]
+        assert isinstance(failures, list)
+        print("\nEval gate FAILED: " + "; ".join(failures), file=sys.stderr)
         sys.exit(1)
     print("\nEval gate passed.")
 

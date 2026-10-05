@@ -69,7 +69,9 @@ labelled set of **23 in-corpus** queries and **2 deliberately out-of-corpus** qu
 | Refusal accuracy (out-of-corpus) | **1.00** |
 
 The eval doubles as a **CI regression gate**: GitHub Actions fails the build if
-Hit Rate@5 drops below `0.70`, so a retrieval regression can't be merged silently.
+Hit Rate@5 drops below `0.70` **or** refusal accuracy on out-of-corpus queries drops
+below `1.00`, so neither a retrieval regression nor a leaky abstention gate can be
+merged silently.
 
 > Retrieval scores are high because the knowledge base is small and topically clean;
 > MRR < 1.0 shows the harder queries (e.g. an auto-recharge question whose answer sits

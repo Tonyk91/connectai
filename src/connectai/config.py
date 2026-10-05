@@ -76,6 +76,9 @@ class Config:
     eval_hit_rate_threshold: float = field(
         default_factory=lambda: _get_float("EVAL_HIT_RATE_THRESHOLD", 0.70)
     )
+    eval_refusal_threshold: float = field(
+        default_factory=lambda: _get_float("EVAL_REFUSAL_THRESHOLD", 1.00)
+    )
 
     # Chunking
     chunk_target_tokens: int = field(default_factory=lambda: _get_int("CHUNK_TARGET_TOKENS", 180))

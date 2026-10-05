@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from connectai.eval import hit_at_k, recall_at_k, reciprocal_rank
+from connectai.eval import gate_failures, hit_at_k, recall_at_k, reciprocal_rank
 
 
 def test_reciprocal_rank_first_position() -> None:
@@ -30,3 +30,28 @@ def test_recall_at_k_partial_and_full() -> None:
 
 def test_recall_at_k_no_expected() -> None:
     assert recall_at_k(["a"], set(), k=5) == 0.0
+
+
+def _summary(hit_rate: float, refusal: float) -> dict[str, object]:
+    return {
+        "hit_rate": hit_rate,
+        "hit_rate_threshold": 0.70,
+        "refusal_accuracy": refusal,
+        "refusal_threshold": 1.00,
+    }
+
+
+def test_gate_passes_when_both_thresholds_met() -> None:
+    assert gate_failures(_summary(0.95, 1.0)) == []
+
+
+def test_gate_fails_on_refusal_alone() -> None:
+    failures = gate_failures(_summary(1.0, 0.5))
+    assert len(failures) == 1
+    assert failures[0].startswith("Refusal accuracy")
+
+
+def test_gate_fails_on_hit_rate_alone() -> None:
+    failures = gate_failures(_summary(0.5, 1.0))
+    assert len(failures) == 1
+    assert failures[0].startswith("Hit Rate")
